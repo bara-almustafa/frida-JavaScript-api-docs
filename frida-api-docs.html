@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frida JavaScript API Docs Summary - By 0xCyberSolider</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+  :root {
+    --red: #cc2200;
+    --red-bright: #ff2a00;
+    --red-dim: #7a1500;
+    --red-glow: rgba(204, 34, 0, 0.15);
+    --bg: #0d0d0d;
+    --bg2: #111111;
+    --border: #4a0d00;
+    --border-bright: #cc2200;
+    --text: #cc2200;
+    --text-dim: #7a1500;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    min-height: 100vh;
+    padding: 30px 20px 60px;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(180,20,0,0.08) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(204,34,0,0.015) 2px, rgba(204,34,0,0.015) 4px);
+  }
+
+  h1 {
+    font-family: 'VT323', monospace;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    text-align: center;
+    color: var(--red-bright);
+    text-shadow: 0 0 20px rgba(255,42,0,0.5), 0 0 60px rgba(255,42,0,0.2);
+    letter-spacing: 3px;
+    margin-bottom: 36px;
+    line-height: 1.2;
+    animation: flicker 8s infinite;
+  }
+
+  @keyframes flicker {
+    0%,94%,96%,100% { opacity: 1; }
+    95% { opacity: 0.85; }
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* Search bar */
+  .search-wrap {
+    margin-bottom: 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .search-wrap input {
+    flex: 1;
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    color: var(--red-bright);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    padding: 8px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--red-bright); box-shadow: 0 0 10px rgba(204,34,0,0.2); }
+  .search-wrap input::placeholder { color: var(--red-dim); }
+
+  .search-wrap select {
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    color: var(--red);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* Table */
+  .table-wrap {
+    border: 1px solid var(--border-bright);
+    box-shadow: 0 0 30px rgba(204,34,0,0.12), inset 0 0 60px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead tr {
+    background: #110500;
+  }
+
+  thead th {
+    padding: 12px 16px;
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--red);
+    border: 1px solid var(--border);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Column widths */
+  col.col-cat   { width: 22%; }
+  col.col-sec   { width: 18%; }
+  col.col-prop  { width: 22%; }
+  col.col-exp   { width: 38%; }
+
+  tbody tr {
+    transition: background 0.15s;
+  }
+  tbody tr:hover {
+    background: rgba(204,34,0,0.07);
+  }
+  tbody tr.hidden { display: none; }
+
+  tbody td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    font-size: 0.82rem;
+    vertical-align: top;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Category cell spans multiple rows - styled distinctly */
+  td.cat-cell {
+    background: #0f0300;
+    color: var(--red);
+    font-weight: bold;
+    text-align: center;
+    font-size: 0.88rem;
+    letter-spacing: 0.5px;
+    border-right: 2px solid var(--border-bright);
+    vertical-align: middle;
+  }
+
+  /* Section cell */
+  td.sec-cell {
+    color: var(--red);
+    font-weight: bold;
+    font-size: 0.84rem;
+    border-right: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  /* Property cell */
+  td.prop-cell {
+    color: #e05500;
+    font-size: 0.78rem;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  td.prop-cell code {
+    background: rgba(204,34,0,0.08);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 0.76rem;
+    color: #ff4400;
+    display: inline-block;
+    margin: 1px 0;
+  }
+
+  /* Explain cell */
+  td.exp-cell {
+    color: #884422;
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+
+  /* Category section header rows */
+  tr.cat-header td {
+    background: #150400;
+    color: var(--red-bright);
+    font-weight: bold;
+    text-align: center;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    padding: 10px 14px;
+    border-top: 2px solid var(--border-bright);
+    text-shadow: 0 0 10px rgba(255,42,0,0.3);
+  }
+
+  /* Stats bar */
+  .stats {
+    margin-top: 16px;
+    font-size: 0.72rem;
+    color: var(--red-dim);
+    text-align: right;
+    letter-spacing: 0.5px;
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,0.05) 3px,
+      rgba(0,0,0,0.05) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Frida JavaScript API Docs Summary<br>— By 0xCyberSolider —</h1>
+
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="Search API... (property, section, description)" oninput="filterTable()">
+    <select id="catFilter" onchange="filterTable()">
+      <option value="">All Categories</option>
+      <option>Runtime information</option>
+      <option>Process / Thread / Module / Memory</option>
+      <option>Data Types / Function / Callback</option>
+      <option>Network</option>
+      <option>File and Stream</option>
+      <option>Database</option>
+      <option>Instrumentation</option>
+      <option>CPU Instruction</option>
+      <option>Other</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table id="apiTable">
+      <colgroup>
+        <col class="col-cat">
+        <col class="col-sec">
+        <col class="col-prop">
+        <col class="col-exp">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Section</th>
+          <th>Property / Method</th>
+          <th>Explanation</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <div class="stats" id="stats"></div>
+</div>
+
+<script>
+const data = [
+  // ── Runtime information ──────────────────────────────────────────────────
+  { cat: "Runtime information", sec: "Frida", prop: "Frida.version", exp: "Current Frida version string." },
+  { cat: "Runtime information", sec: "Frida", prop: "Frida.heapSize", exp: "Current size of Frida's private heap (bytes). Useful for monitoring instrumentation memory usage." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.runtime", exp: "Runtime in use: 'QJS' or 'V8'." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.evaluate(name, source)", exp: "Evaluates JS string in global scope. Supports source maps and custom script name." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.load(name, source)", exp: "Compiles and evaluates source as an ES module. Returns Promise resolving to module namespace." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.registerSourceMap(name, json)", exp: "Registers a source map for a named script, enabling accurate stack traces." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.nextTick(func[, ...params])", exp: "Runs func on the next tick, when current native thread exits the JS runtime." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.pin() / unpin()", exp: "Temporarily prevents (pin) or re-enables (unpin) script unloading. Reference-counted." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.bindWeak(value, fn)", exp: "Calls fn when value is GC'd or script unloads. Returns an ID for explicit cleanup." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.unbindWeak(id)", exp: "Stops monitoring and immediately calls the fn callback for the given id." },
+  { cat: "Runtime information", sec: "Script", prop: "Script.setGlobalAccessHandler(handler)", exp: "Installs a handler to resolve missing global variables. Useful for REPL lazy-loading." },
+
+  // ── Process ──────────────────────────────────────────────────────────────
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.id", exp: "PID as a number." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.arch", exp: "Architecture string: 'ia32', 'x64', 'arm', or 'arm64'." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.platform", exp: "Platform string: 'windows', 'darwin', 'linux', 'freebsd', 'qnx', or 'barebone'." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.pageSize", exp: "Size of a virtual memory page in bytes." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.pointerSize", exp: "Size of a pointer in bytes. Use for portable scripts." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.mainModule", exp: "Module object representing the main executable." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.enumerateThreads()", exp: "Returns array of Thread objects for all running threads." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.attachThreadObserver(cb)", exp: "Observes thread add/remove/rename events. Returns observer with detach()." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.runOnThread(id, callback)", exp: "Runs JS callback on the specified thread. Returns a Promise. Use with caution." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.findModuleByName(name)", exp: "Returns a Module by name, or null if not found (use getModuleByName to throw instead)." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.enumerateModules()", exp: "Returns array of all currently loaded Module objects." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.enumerateRanges(protection)", exp: "Returns memory ranges matching protection string (e.g. 'rw-'). Each has base, size, protection." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.setExceptionHandler(cb)", exp: "Installs a process-wide native exception handler. Return true to suppress the exception." },
+  { cat: "Process / Thread / Module / Memory", sec: "Process", prop: "Process.getCurrentDir() / getHomeDir() / getTmpDir()", exp: "Returns filesystem paths for current dir, home dir, and temp dir." },
+
+  // ── Thread ───────────────────────────────────────────────────────────────
+  { cat: "Process / Thread / Module / Memory", sec: "Thread", prop: "thread.id / name / state / context", exp: "OS thread ID, name, state snapshot (running/stopped/waiting…), CPU register snapshot." },
+  { cat: "Process / Thread / Module / Memory", sec: "Thread", prop: "thread.setHardwareBreakpoint(id, addr)", exp: "Sets hardware breakpoint. Use with Process.setExceptionHandler() to catch it." },
+  { cat: "Process / Thread / Module / Memory", sec: "Thread", prop: "thread.setHardwareWatchpoint(id, addr, size, cond)", exp: "Sets hardware watchpoint for 'r', 'w', or 'rw' access on a memory region." },
+  { cat: "Process / Thread / Module / Memory", sec: "Thread", prop: "Thread.backtrace([ctx, backtracer])", exp: "Generates backtrace array of NativePointers. Pass this.context from Interceptor for accuracy." },
+  { cat: "Process / Thread / Module / Memory", sec: "Thread", prop: "Thread.sleep(delay)", exp: "Suspends current thread for delay seconds (e.g. 0.05 = 50 ms)." },
+
+  // ── Module ───────────────────────────────────────────────────────────────
+  { cat: "Process / Thread / Module / Memory", sec: "Module", prop: "module.name / base / size / path", exp: "Name, base address (NativePointer), size in bytes, and full filesystem path." },
+  { cat: "Process / Thread / Module / Memory", sec: "Module", prop: "module.enumerateImports()", exp: "Returns array of imports: {type, name, module, address, slot}." },
+  { cat: "Process / Thread / Module / Memory", sec: "Module", prop: "module.enumerateExports()", exp: "Returns array of exports: {type, name, address}." },
+  { cat: "Process / Thread / Module / Memory", sec: "Module", prop: "module.enumerateSymbols()", exp: "Returns symbols with isGlobal, type, name, address (i/macOS and Linux only)." },
+  { cat: "Process / Thread / Module / Memory", sec: "Module", prop: "module.enumerateSections()", exp: "Returns sections: {id, name, address, size}." },
+  { cat: "Process / Thread / Module / Memory", sec: "Module", prop: "module.findExportByName(name)", exp: "Returns NativePointer of named export, or null if not found." },
+  { cat: "Process / Thread / Module / Memory", sec: "Module", prop: "Module.load(path)", exp: "Loads a module from filesystem and returns a Module object." },
+
+  // ── ModuleMap ────────────────────────────────────────────────────────────
+  { cat: "Process / Thread / Module / Memory", sec: "ModuleMap", prop: "new ModuleMap([filter])", exp: "Optimized map for resolving which module owns a given address. Supports filter function." },
+  { cat: "Process / Thread / Module / Memory", sec: "ModuleMap", prop: "map.has(address) / find(address) / get(address)", exp: "Check membership, or retrieve the Module for an address." },
+  { cat: "Process / Thread / Module / Memory", sec: "ModuleMap", prop: "map.update()", exp: "Refreshes the map after modules are loaded/unloaded." },
+
+  // ── Memory ───────────────────────────────────────────────────────────────
+  { cat: "Process / Thread / Module / Memory", sec: "Memory", prop: "Memory.scan(addr, size, pattern, cb)", exp: "Scans memory for pattern (e.g. '13 37 ?? ff'). Calls onMatch, onError, onComplete." },
+  { cat: "Process / Thread / Module / Memory", sec: "Memory", prop: "Memory.scanSync(addr, size, pattern)", exp: "Synchronous scan. Returns [{address, size}] array." },
+  { cat: "Process / Thread / Module / Memory", sec: "Memory", prop: "Memory.alloc(size[, opts])", exp: "Allocates memory on heap or as OS pages. Returns NativePointer. Freed on GC." },
+  { cat: "Process / Thread / Module / Memory", sec: "Memory", prop: "Memory.copy(dst, src, n)", exp: "Copies n bytes from src to dst (like memcpy)." },
+  { cat: "Process / Thread / Module / Memory", sec: "Memory", prop: "Memory.protect(address, size, prot)", exp: "Updates memory protection. Returns boolean. E.g. Memory.protect(ptr('0x1234'), 4096, 'rw-')." },
+  { cat: "Process / Thread / Module / Memory", sec: "Memory", prop: "Memory.patchCode(addr, size, applyFn)", exp: "Safely modifies code in memory, handling iOS code-signing requirements." },
+  { cat: "Process / Thread / Module / Memory", sec: "Memory", prop: "Memory.allocUtf8String(str)", exp: "Allocates and writes a UTF-8 string on the heap. Returns NativePointer." },
+  { cat: "Process / Thread / Module / Memory", sec: "MemoryAccessMonitor", prop: "MemoryAccessMonitor.enable(ranges, cb)", exp: "Monitors memory ranges for first access per page. Calls onAccess(details) synchronously." },
+  { cat: "Process / Thread / Module / Memory", sec: "MemoryAccessMonitor", prop: "MemoryAccessMonitor.disable()", exp: "Stops monitoring all previously enabled ranges." },
+
+  // ── CModule / RustModule ─────────────────────────────────────────────────
+  { cat: "Process / Thread / Module / Memory", sec: "CModule", prop: "new CModule(code[, symbols, opts])", exp: "Compiles C source (or precompiled shared lib) to memory. Global functions exported as NativePointer properties." },
+  { cat: "Process / Thread / Module / Memory", sec: "CModule", prop: "cm.dispose()", exp: "Eagerly unmaps the module. Useful for short-lived modules." },
+  { cat: "Process / Thread / Module / Memory", sec: "RustModule", prop: "new RustModule(code[, symbols, opts])", exp: "Compiles Rust source to memory. Public #[no_mangle] extern \"C\" fns exported as NativePointer props." },
+
+  // ── ApiResolver / DebugSymbol / Kernel ───────────────────────────────────
+  { cat: "Process / Thread / Module / Memory", sec: "ApiResolver", prop: "new ApiResolver(type)", exp: "Resolves APIs by name with glob support. Types: 'module', 'swift', 'objc'." },
+  { cat: "Process / Thread / Module / Memory", sec: "ApiResolver", prop: "resolver.enumerateMatches(query)", exp: "Returns [{name, address, size?}]. Query example: 'exports:*!open*'." },
+  { cat: "Process / Thread / Module / Memory", sec: "DebugSymbol", prop: "DebugSymbol.fromAddress(addr)", exp: "Returns {address, name, moduleName, fileName, lineNumber} for debug info at address." },
+  { cat: "Process / Thread / Module / Memory", sec: "DebugSymbol", prop: "DebugSymbol.findFunctionsNamed(name)", exp: "Returns array of NativePointer addresses for matching function name." },
+  { cat: "Process / Thread / Module / Memory", sec: "Kernel", prop: "Kernel.available / base / pageSize", exp: "Whether Kernel API is available, kernel base (UInt64), and page size." },
+  { cat: "Process / Thread / Module / Memory", sec: "Kernel", prop: "Kernel.scan / scanSync / readByteArray / writeByteArray", exp: "Kernel memory equivalents of Memory.scan, Memory.scanSync, and pointer read/write." },
+
+  // ── Data Types ───────────────────────────────────────────────────────────
+  { cat: "Data Types / Function / Callback", sec: "Int64 / UInt64", prop: "new Int64(v) / new UInt64(v)", exp: "64-bit integers. Support add/sub/and/or/xor/shr/shl/compare/toNumber/toString. Shorthand: int64(v), uint64(v)." },
+  { cat: "Data Types / Function / Callback", sec: "NativePointer", prop: "new NativePointer(s) / ptr(s)", exp: "Wraps a memory address. Supports arithmetic, comparison, signing, read/write ops." },
+  { cat: "Data Types / Function / Callback", sec: "NativePointer", prop: "ptr.readPointer() / writePointer(p)", exp: "Reads or writes a pointer at this address. Throws if not readable/writable." },
+  { cat: "Data Types / Function / Callback", sec: "NativePointer", prop: "ptr.readS8/U8/S16/U16/S32/U32/…()", exp: "Reads signed/unsigned 8/16/32/64-bit or float/double values." },
+  { cat: "Data Types / Function / Callback", sec: "NativePointer", prop: "ptr.readUtf8String([size]) / writeUtf8String(str)", exp: "Reads or writes a NUL-terminated UTF-8 string at this address." },
+  { cat: "Data Types / Function / Callback", sec: "NativePointer", prop: "ptr.readByteArray(len) / writeByteArray(bytes)", exp: "Reads len bytes as ArrayBuffer, or writes ArrayBuffer/int-array to memory." },
+  { cat: "Data Types / Function / Callback", sec: "NativePointer", prop: "ptr.sign([key, data]) / strip([key])", exp: "Add or remove pointer authentication bits (AArch64 PAC). No-op on unsupported platforms." },
+  { cat: "Data Types / Function / Callback", sec: "ArrayBuffer", prop: "ArrayBuffer.wrap(address, size)", exp: "Creates ArrayBuffer over existing memory. No bounds checking — bad pointer crashes process." },
+  { cat: "Data Types / Function / Callback", sec: "NativeFunction", prop: "new NativeFunction(addr, retType, argTypes[, abi/opts])", exp: "Wraps a native function for calling from JS. Supports structs, variadic args, scheduling, exception, and traps options." },
+  { cat: "Data Types / Function / Callback", sec: "NativeCallback", prop: "new NativeCallback(func, retType, argTypes[, abi])", exp: "Creates a native-callable wrapper around a JS function. Also a NativePointer." },
+  { cat: "Data Types / Function / Callback", sec: "SystemFunction", prop: "new SystemFunction(addr, retType, argTypes)", exp: "Like NativeFunction but captures errno/lastError after the call. Returns {value, errno/lastError}." },
+
+  // ── Network ───────────────────────────────────────────────────────────────
+  { cat: "Network", sec: "Socket", prop: "Socket.listen([opts])", exp: "Opens a TCP/UNIX listening socket. Returns Promise<SocketListener>." },
+  { cat: "Network", sec: "Socket", prop: "Socket.connect(opts)", exp: "Connects to a TCP/UNIX server. Returns Promise<SocketConnection>." },
+  { cat: "Network", sec: "Socket", prop: "Socket.type(handle) / localAddress(h) / peerAddress(h)", exp: "Inspects OS socket handle: returns type string or address {ip, port} / {path}." },
+  { cat: "Network", sec: "SocketListener", prop: "listener.accept()", exp: "Async. Waits for next client connection. Returns Promise<SocketConnection>." },
+  { cat: "Network", sec: "SocketListener", prop: "listener.close()", exp: "Closes the listener, releasing all resources." },
+  { cat: "Network", sec: "SocketConnection", prop: "conn.setNoDelay(noDelay)", exp: "Enables/disables Nagle algorithm. Set true for low-latency connections." },
+
+  // ── File and Stream ───────────────────────────────────────────────────────
+  { cat: "File and Stream", sec: "File (static)", prop: "File.readAllBytes(path) / readAllText(path)", exp: "Synchronously reads all content from file as ArrayBuffer or UTF-8 string." },
+  { cat: "File and Stream", sec: "File (static)", prop: "File.writeAllBytes(path, data) / writeAllText(path, text)", exp: "Synchronously writes ArrayBuffer or UTF-8 string to file." },
+  { cat: "File and Stream", sec: "File (instance)", prop: "new File(filePath, mode)", exp: "Opens a file (e.g. mode 'rb', 'wb'). Supports read/write/seek/tell/flush/close." },
+  { cat: "File and Stream", sec: "File (instance)", prop: "file.readBytes([size]) / readText([size]) / readLine()", exp: "Reads bytes, text, or a single line from current file position." },
+  { cat: "File and Stream", sec: "IOStream", prop: "stream.input / output / close()", exp: "Async bi-directional stream. input is InputStream, output is OutputStream." },
+  { cat: "File and Stream", sec: "InputStream", prop: "stream.read(size) / readAll(size)", exp: "Async reads up to size bytes, or exactly size bytes. Returns Promise<ArrayBuffer>." },
+  { cat: "File and Stream", sec: "OutputStream", prop: "stream.write(data) / writeAll(data)", exp: "Async writes data (ArrayBuffer or int array). writeAll ensures all bytes are sent." },
+  { cat: "File and Stream", sec: "UnixInputStream / UnixOutputStream", prop: "new Unix[In/Out]Stream(fd[, opts])", exp: "Wraps a UNIX file descriptor. Pass autoClose: true to close fd when stream is released." },
+  { cat: "File and Stream", sec: "Win32InputStream / Win32OutputStream", prop: "new Win32[In/Out]Stream(handle[, opts])", exp: "Wraps a Windows HANDLE. Pass autoClose: true to close handle when stream is released." },
+
+  // ── Database ──────────────────────────────────────────────────────────────
+  { cat: "Database", sec: "SqliteDatabase", prop: "SqliteDatabase.open(path[, opts])", exp: "Opens an SQLite v3 database. opts.flags can be ['readonly','readwrite','create']." },
+  { cat: "Database", sec: "SqliteDatabase", prop: "SqliteDatabase.openInline(encodedContents)", exp: "Opens a Base64-encoded (optionally gzipped) database entirely in memory." },
+  { cat: "Database", sec: "SqliteDatabase", prop: "db.exec(sql) / prepare(sql) / dump() / close()", exp: "exec ignores results. prepare returns SqliteStatement. dump returns gzip+Base64 string." },
+  { cat: "Database", sec: "SqliteStatement", prop: "stmt.bindInteger/Float/Text/Blob/Null(index, val)", exp: "Binds typed values to query parameters by 1-based index." },
+  { cat: "Database", sec: "SqliteStatement", prop: "stmt.step() / reset()", exp: "step() fetches next row as array (or null at end). reset() allows re-use of the statement." },
+
+  // ── Instrumentation ───────────────────────────────────────────────────────
+  { cat: "Instrumentation", sec: "Interceptor", prop: "Interceptor.attach(target, {onEnter, onLeave})", exp: "Intercepts function calls. onEnter(args) and onLeave(retval) are called on entry/exit. this holds thread-local state." },
+  { cat: "Instrumentation", sec: "Interceptor", prop: "Interceptor.replace(target, replacement)", exp: "Fully replaces a function with a NativeCallback or CModule function." },
+  { cat: "Instrumentation", sec: "Interceptor", prop: "Interceptor.replaceFast(target, replacement)", exp: "Like replace() but with lower overhead. Returns pointer to original." },
+  { cat: "Instrumentation", sec: "Interceptor", prop: "Interceptor.revert(target)", exp: "Restores the original function at target." },
+  { cat: "Instrumentation", sec: "Interceptor", prop: "Interceptor.detachAll() / flush()", exp: "Detaches all hooks, or flushes pending instrumentation changes to memory." },
+  { cat: "Instrumentation", sec: "Stalker", prop: "Stalker.follow([threadId, opts])", exp: "Traces execution of a thread. Opts include events (call/ret/exec/block/compile), onReceive, onCallSummary, transform." },
+  { cat: "Instrumentation", sec: "Stalker", prop: "Stalker.unfollow([threadId])", exp: "Stops tracing the given thread (or current thread)." },
+  { cat: "Instrumentation", sec: "Stalker", prop: "Stalker.parse(events[, opts])", exp: "Parses raw GumEvent binary blob from onReceive. Returns human-readable output." },
+  { cat: "Instrumentation", sec: "Stalker", prop: "Stalker.addCallProbe(addr, cb)", exp: "Calls cb synchronously on every call to addr. Returns an id for removal." },
+  { cat: "Instrumentation", sec: "Stalker", prop: "Stalker.exclude(range)", exp: "Marks a memory range as excluded from stalking (improves perf, reduces noise)." },
+  { cat: "Instrumentation", sec: "Stalker", prop: "Stalker.trustThreshold / queueCapacity / queueDrainInterval", exp: "Performance tuning: execution trust count (-1/0/N), event queue size, and drain interval." },
+  { cat: "Instrumentation", sec: "ObjC", prop: "ObjC.available / classes / protocols / mainQueue", exp: "ObjC runtime bridge. ObjC.classes maps class names to JS wrappers. (Moved to frida-objc-bridge in Frida 17.)" },
+  { cat: "Instrumentation", sec: "ObjC", prop: "ObjC.implement(method, fn)", exp: "Creates a NativeCallback compatible with method's signature for use as implementation." },
+  { cat: "Instrumentation", sec: "ObjC", prop: "ObjC.registerClass(spec) / registerProtocol(spec) / registerProxy(spec)", exp: "Creates new ObjC classes, protocols, or proxy classes from JS specs." },
+  { cat: "Instrumentation", sec: "ObjC", prop: "ObjC.choose(specifier, callbacks)", exp: "Scans heap for live ObjC instances of a class. Calls onMatch(instance), onComplete()." },
+  { cat: "Instrumentation", sec: "Java", prop: "Java.available / androidVersion", exp: "Whether JVM is loaded, and Android version string. (Moved to frida-java-bridge in Frida 17.)" },
+  { cat: "Instrumentation", sec: "Java", prop: "Java.perform(fn) / performNow(fn)", exp: "Ensures current thread is attached to JVM before calling fn. perform() defers until class loader ready." },
+  { cat: "Instrumentation", sec: "Java", prop: "Java.use(className)", exp: "Returns JS wrapper for a Java class. Call $new() to instantiate, $dispose() to free." },
+  { cat: "Instrumentation", sec: "Java", prop: "Java.choose(className, callbacks)", exp: "Scans Java heap for live instances. Calls onMatch(instance), onComplete()." },
+  { cat: "Instrumentation", sec: "Java", prop: "Java.enumerateMethods(query)", exp: "Finds methods matching 'Class!method' with glob support and modifiers (i/s/u)." },
+  { cat: "Instrumentation", sec: "Java", prop: "Java.registerClass(spec)", exp: "Creates a new Java class from a spec with name, superClass, implements, fields, methods." },
+
+  // ── CPU Instruction ───────────────────────────────────────────────────────
+  { cat: "CPU Instruction", sec: "Instruction", prop: "Instruction.parse(target)", exp: "Parses instruction at address. Returns {address, next, size, mnemonic, opStr, operands, groups}." },
+  { cat: "CPU Instruction", sec: "X86Writer", prop: "new X86Writer(codeAddr[, {pc}])", exp: "Generates x86 machine code to memory. Flush with flush() when done." },
+  { cat: "CPU Instruction", sec: "X86Writer", prop: "putCallAddress(addr) / putJmpAddress(addr) / putRet()", exp: "Emit CALL, JMP, or RET instructions." },
+  { cat: "CPU Instruction", sec: "X86Writer", prop: "putMovRegU32(reg, val) / putMovRegReg(dst, src)", exp: "Emit MOV instructions for immediate or register-to-register moves." },
+  { cat: "CPU Instruction", sec: "X86Writer", prop: "putNop() / putBreakpoint() / putLabel(id)", exp: "Emit NOP, OS breakpoint, or a named label for branch targets." },
+  { cat: "CPU Instruction", sec: "X86Relocator", prop: "new X86Relocator(inputCode, output)", exp: "Copies x86 instructions adjusting position-dependent ones. Use readOne()/writeOne()/writeAll()." },
+  { cat: "CPU Instruction", sec: "ArmWriter / ThumbWriter", prop: "new ArmWriter(addr) / new ThumbWriter(addr)", exp: "Generate ARM or Thumb machine code. Same flush/label/put* pattern as X86Writer." },
+  { cat: "CPU Instruction", sec: "Arm64Writer", prop: "new Arm64Writer(codeAddr[, {pc}])", exp: "Generates AArch64 machine code. Supports BR/BLR with/without auth, LDP/STP, ADRP, etc." },
+  { cat: "CPU Instruction", sec: "MipsWriter", prop: "new MipsWriter(codeAddr[, {pc}])", exp: "Generates MIPS machine code. Supports J/JAL/JR/JALR/BEQ and standard data ops." },
+
+  // ── Other ─────────────────────────────────────────────────────────────────
+  { cat: "Other", sec: "Console", prop: "console.log / warn / error(line)", exp: "Writes to the Frida host console (stdout/stderr). ArrayBuffer args display as hexdump." },
+  { cat: "Other", sec: "Hexdump", prop: "hexdump(target[, opts])", exp: "Generates hex dump from NativePointer or ArrayBuffer. Opts: offset, length, header, ansi." },
+  { cat: "Other", sec: "send / recv", prop: "send(message[, data]) / recv([type,] callback)", exp: "send() posts JSON message + optional binary to host. recv() registers a one-shot message handler." },
+  { cat: "Other", sec: "rpc.exports", prop: "rpc.exports = { method(a,b){…} }", exp: "Exposes RPC methods callable from host. May return plain value or Promise." },
+  { cat: "Other", sec: "Timing", prop: "setTimeout / setInterval / setImmediate / clear*", exp: "Standard JS timer APIs. Run on Frida's JS thread." },
+  { cat: "Other", sec: "Worker", prop: "new Worker(url[, opts])", exp: "Spawns a separate JS heap/thread. Communicate via post()/recv(). Has exports proxy for rpc.exports." },
+  { cat: "Other", sec: "Cloak", prop: "Cloak.addThread(id) / removeThread(id) / hasThread(id)", exp: "Hides/shows threads from Process.enumerateThreads() and similar APIs." },
+  { cat: "Other", sec: "Cloak", prop: "Cloak.addRange(range) / removeRange / clipRange(range)", exp: "Hides memory ranges from Process.enumerateRanges(). clipRange returns visible sub-ranges." },
+  { cat: "Other", sec: "Cloak", prop: "Cloak.addFileDescriptor(fd) / remove / has", exp: "Hides file descriptors from introspection APIs." },
+  { cat: "Other", sec: "Profiler", prop: "new Profiler() / instrument(addr, sampler[, cb])", exp: "Worst-case profiler built on Interceptor. Uses samplers to measure per-call cost. generateReport() returns XML." },
+  { cat: "Other", sec: "Samplers", prop: "CycleSampler / BusyCycleSampler / WallClockSampler / UserTimeSampler / MallocCountSampler / CallCountSampler", exp: "Various measurement backends for the Profiler: CPU cycles, wall time, user time, malloc count, or call count." },
+  { cat: "Other", sec: "Shorthand", prop: "int64(v) / uint64(v) / ptr(s) / NULL", exp: "Shorthand constructors. NULL = ptr('0')." },
+  { cat: "Other", sec: "GC", prop: "gc()", exp: "Forces garbage collection. Useful for testing Script.bindWeak() logic." },
+];
+
+function buildTable(rows) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  // Group by category
+  const cats = {};
+  rows.forEach(r => {
+    if (!cats[r.cat]) cats[r.cat] = {};
+    if (!cats[r.cat][r.sec]) cats[r.cat][r.sec] = [];
+    cats[r.cat][r.sec].push(r);
+  });
+
+  let total = 0;
+  for (const [cat, secs] of Object.entries(cats)) {
+    // Category header spanning all cols
+    const hdr = document.createElement('tr');
+    hdr.className = 'cat-header';
+    hdr.innerHTML = `<td colspan="4">${cat}</td>`;
+    tbody.appendChild(hdr);
+
+    for (const [sec, items] of Object.entries(secs)) {
+      items.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.dataset.cat = cat;
+        tr.dataset.sec = sec;
+        tr.dataset.prop = item.prop.toLowerCase();
+        tr.dataset.exp = item.exp.toLowerCase();
+
+        let catCell = '';
+        if (idx === 0) {
+          catCell = `<td class="cat-cell" rowspan="${items.length}">${sec}</td>`;
+        }
+
+        tr.innerHTML = `
+          ${idx === 0 ? catCell : ''}
+          <td class="prop-cell"><code>${item.prop}</code></td>
+          <td class="exp-cell">${item.exp}</td>
+        `;
+        tbody.appendChild(tr);
+        total++;
+      });
+    }
+  }
+  document.getElementById('stats').textContent = `> ${total} entries displayed`;
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const cf = document.getElementById('catFilter').value;
+
+  const filtered = data.filter(r => {
+    const matchCat = !cf || r.cat === cf;
+    const matchQ = !q || r.prop.toLowerCase().includes(q) || r.exp.toLowerCase().includes(q) || r.sec.toLowerCase().includes(q) || r.cat.toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+
+  buildTable(filtered);
+}
+
+buildTable(data);
+</script>
+</body>
+</html>
