@@ -65,13 +65,13 @@
 
 No installation required. Just:
 
-1. **Download** `frida-api-docs.html`
+1. **Download** `index.html`
 2. **Open** it in any modern browser
 3. **Search** or **filter** to find what you need
 
 ```bash
 # Clone the repo
-git clone https://github.com/0xCyberSolider/frida-js-api-docs.git
+git clone https://github.com/bara-almustafa/frida-JavaScript-api-docs.git
 
 # Open the file
 open frida-api-docs.html       # macOS
